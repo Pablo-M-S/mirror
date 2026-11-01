@@ -240,6 +240,31 @@ android {
             }
         }
 
+        create("pocoF3") {
+            dimension = "version"
+            minSdk = 29
+            manifestPlaceholders += mapOf("appNameBase" to "Eden Poco F3")
+            resValue("string", "app_name_suffixed", "Eden Poco F3")
+            applicationId = "dev.nxl.eden_pocof3"
+
+            externalNativeBuild {
+                cmake {
+                    arguments.add("-DYUZU_LEGACY=ON")
+                    arguments.add("-DYUZU_BUILD_PRESET=pocof3")
+                }
+            }
+
+            sourceSets {
+                getByName("pocoF3") {
+                    res.srcDirs("src/main/legacy")
+                }
+            }
+
+            ndk {
+                abiFilters += listOf("arm64-v8a")
+            }
+        }
+
         create("chromeOS") {
             dimension = "version"
             manifestPlaceholders += mapOf("appNameBase" to "Eden ChromeOS")
