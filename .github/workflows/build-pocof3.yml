@@ -1,6 +1,6 @@
 {
  "name":"Build Eden Poco F3",
- "on":{"workflow_dispatch":{"inputs":{"lto":{"description":"Ativar LTO (mais rápido em execução, build mais pesada)","type":"boolean","default":true}}}},
+ "on":{"workflow_dispatch":{"inputs":{"lto":{"description":"Ativar LTO (mais rápido em execução, build mais pesada)","type":"boolean","default":false}}}},
  "jobs":{"build":{
   "runs-on":"ubuntu-24.04","timeout-minutes":360,"env":{"LTO":"${{ inputs.lto && 'ON' || 'OFF' }}"},
   "steps":[
@@ -8,7 +8,8 @@
    {"name":"Checkout","uses":"actions/checkout@v4","with":{"fetch-depth":0}},
    {"name":"JDK 17","uses":"actions/setup-java@v4","with":{"distribution":"temurin","java-version":"17"}},
    {"name":"SDK, NDK e CMake","run":"ANDROID_HOME=\"${ANDROID_HOME:-/usr/local/lib/android/sdk}\"\nSDKM=\"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager\"\nyes | \"$SDKM\" --licenses > /dev/null || true\n\"$SDKM\" --install \"ndk;28.2.13676358\" \"cmake;3.31.5\" \"platforms;android-36\"\n"},
-   {"name":"Compilar flavor pocoF3 (release)","working-directory":"src/android","run":"chmod +x ./gradlew\n./gradlew copyPocoF3ReleaseOutputs \\\n  -PYUZU_ANDROID_ARGS=\"-DUSE_CCACHE=false -DENABLE_LTO=${LTO}\" \\\n  -Pnightly=false \\\n  --no-daemon \\\n  --console=plain\n"},
+   {"name":"Compilar flavor pocoF3 (release)","shell":"bash","working-directory":"src/android","run":"chmod +x ./gradlew\n./gradlew copyPocoF3ReleaseOutputs \\\n  -PYUZU_ANDROID_ARGS=\"-DUSE_CCACHE=false -DENABLE_LTO=${LTO}\" \\\n  -Pnightly=false \\\n  --no-daemon \\\n  --console=plain 2>&1 | tee \"$GITHUB_WORKSPACE/build.log\"\n"},
+   {"name":"Resumo do erro","if":"failure()","shell":"bash","run":"grep -n -A12 -E \"CMake Error|Configuring incomplete|Could NOT find|fatal error|error:\" build.log | head -90 || true\necho ======== ULTIMAS LINHAS DO CMAKE\ngrep -n \"C/C++:\" build.log | tail -40 || true\n"},
    {"name":"Listar artefatos","run":"ls -lh artifacts"},
    {"name":"Enviar APK","uses":"actions/upload-artifact@v4","with":{"name":"eden-pocof3-apk","path":"artifacts/*.apk","retention-days":14}}
   ]
